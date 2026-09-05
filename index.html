@@ -283,38 +283,17 @@
   .game-over-banner.show{display:block;}
   .game-over-banner strong{display:block;font-family:'Cormorant Garamond',serif;font-size:1.15rem;margin-bottom:0.2rem;}
 
-  /* ---- Draw offer UI ---- */
-  .draw-offer{
-    display:none;
-    background:rgba(201,162,75,0.08);
-    border:1px solid var(--brass);
-    border-radius:var(--radius);
-    padding:0.85rem;
-    font-size:0.82rem;
-    margin-bottom:1.25rem;
-    text-align:center;
-    color:var(--brass);
-  }
-  .draw-offer.show{display:block;}
-  .draw-offer strong{display:block;font-family:'Cormorant Garamond',serif;font-size:1.05rem;margin-bottom:0.3rem;}
-  .draw-offer .draw-buttons{
-    display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:center;
-  }
-  .draw-offer .draw-btn{
-    background:var(--brass);color:#221A0D;border:none;
-    padding:0.5rem 1rem;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;
-    border-radius:6px;
-  }
-  .draw-offer .draw-btn:hover{background:var(--brass-strong);}
-  .draw-offer .draw-btn.decline{
-    background:none;border:1px solid var(--border-strong);color:var(--text);
-  }
-  .draw-offer .draw-btn.decline:hover{border-color:var(--danger);color:var(--danger);}
-
+  /* ---- Draw offer modal ---- */
+  /* The old in-panel "draw-offer" box has been removed. The draw prompt is now the #drawModal
+     overlay (reuses .modal-overlay/.modal, same as Close Game), so it always shows centered on
+     screen instead of sitting inside the scrollable side panel. */
   .draw-timer{
-    display:none;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;text-align:center;
+    display:none;font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;text-align:center;
   }
   .draw-timer.show{display:block;}
+
+  .modal-btn.accept{ background:var(--success); color:#132313; } /* added — positive color for the Accept action, distinct from the destructive-red .primary used by Close Game */
+  .modal-btn.accept:hover{ background:#82AE82; }
 
   /* ---- Action buttons ---- */
   .game-actions{
@@ -442,6 +421,94 @@
   button:focus-visible, .square:focus-visible, .color-btn:focus-visible{
     outline:2px solid var(--brass);outline-offset:2px;
   }
+
+  /* =====================================================================
+     MOBILE RESPONSIVENESS (added) — purely additive overrides below this
+     line. Nothing above has been changed; these media queries only
+     narrow spacing/sizing at small viewports.
+     ===================================================================== */
+
+  /* Stop any stray element (e.g. a long share link) from forcing horizontal scroll on phones */
+  body{ overflow-x:hidden; }
+
+  @media (max-width:640px){
+    .app{ padding:1.25rem 0.75rem 3rem; } /* tighter outer page padding, frees up width for the board */
+    header{ margin-bottom:1.25rem; }
+    h1{ font-size:1.5rem; } /* smaller wordmark so it doesn't crowd the pill */
+    .conn-pill{ font-size:0.7rem; padding:0.28rem 0.6rem; }
+
+    .center-panel{ margin:1.5rem auto; padding:1.5rem 1.25rem; max-width:100%; } /* fits narrow viewport, less dead space above/below */
+    .center-panel h2{ font-size:1.25rem; }
+
+    .color-choice{ flex-direction:column; } /* stacked color buttons are easier to tap accurately */
+    .color-btn{ flex-direction:row; justify-content:center; padding:0.85rem; }
+
+    .share-box{ flex-wrap:wrap; }
+    .share-box span{ white-space:normal; word-break:break-all; } /* long links wrap instead of overflowing the box */
+
+    .table-layout{ gap:1.25rem; }
+    .board-column{ width:100%; }
+    /* Derived from the actual content width (100vw minus .app's own left+right padding) — no cap, so the
+       board always fills the same computed width across the whole mobile range, not just at 320px. */
+    .board-wrap{ width:calc(100vw - 1.5rem); }
+
+    .seat-chip{ font-size:0.78rem; padding:0.4rem 0.75rem 0.4rem 0.4rem; }
+
+    .side-panel{ padding:1rem; position:static; top:auto; } /* sticky panel would eat too much of a short mobile viewport */
+    .turn-value{ font-size:1.1rem; }
+
+    .game-actions{ flex-direction:column; } /* full-width stacked buttons are easier to tap than cramped side-by-side ones */
+    .action-btn{ width:100%; min-width:0; }
+
+    .toast-region{ left:0.75rem; right:0.75rem; top:0.75rem; } /* toasts span the width instead of floating narrow on the right edge */
+    .toast{ min-width:0; max-width:none; width:100%; }
+
+    .modal{ padding:1.5rem; width:92%; }
+    .modal-buttons{ flex-direction:column; } /* stacked modal buttons, larger tap targets */
+  }
+
+  @media (max-width:380px){
+    .app{ padding:1rem 0.6rem 2.5rem; } /* squeeze page padding further so 320px devices keep max board width */
+    .board-wrap{ width:calc(100vw - 1.2rem); } /* recompute against the smaller padding above */
+    .square i{ font-size:min(11vw, 34px); } /* keep pieces legible relative to a smaller board on very small phones */
+    h1{ font-size:1.3rem; }
+    .conn-pill{ font-size:0.65rem; padding:0.22rem 0.5rem; }
+    .center-panel{ padding:1.25rem 0.85rem; }
+    .seat-chip{ font-size:0.72rem; padding:0.35rem 0.6rem 0.35rem 0.35rem; }
+    .turn-value{ font-size:1rem; }
+    .action-btn{ font-size:0.74rem; padding:0.55rem 0.6rem; }
+  }
+
+  /* =====================================================================
+     TABLET / IPAD RESPONSIVENESS (added) — the range between phone and
+     desktop was previously falling back to the fixed desktop values
+     (a capped board size, a fixed 280px sidebar), which leaves a lot of
+     unused space on iPad-class screens. This tunes that range without
+     touching the phone block above or the desktop defaults below 641px.
+     ===================================================================== */
+
+  @media (min-width:641px) and (max-width:1024px){
+    .app{ padding:2rem 2.5rem 3rem; } /* comfortable side margins rather than edge-to-edge like a phone */
+    .center-panel{ max-width:480px; } /* let the lobby/join card breathe on a bigger screen */
+    .side-panel{ padding:1.5rem; }
+  }
+
+  @media (min-width:641px) and (max-width:820px){
+    /* Portrait iPad: board still stacks above the panel here (existing ≤820px rule), so give it more
+       room now that it isn't sharing a row with the sidebar. width:100% fills the actual column width
+       (single column here, so that's the full content width) rather than guessing from the viewport. */
+    .board-wrap{ width:100%; max-width:600px; }
+    .side-panel{ max-width:600px; margin:0 auto; } /* stop the stacked panel from stretching edge-to-edge and looking sparse */
+  }
+
+  @media (min-width:821px) and (max-width:1024px){
+    /* Landscape iPad: keep the two-column layout, but widen the fixed sidebar. The board fills 100% of
+       its own grid column (viewport minus padding, sidebar, and gap) instead of a vw guess — a vw value
+       ignores how much the sidebar actually takes, which is what let it overflow past the column at
+       in-between widths like 884px. */
+    .table-layout{ grid-template-columns:1fr 320px; }
+    .board-wrap{ width:100%; max-width:620px; }
+  }
 </style>
 </head>
 <body>
@@ -524,25 +591,14 @@
           <span id="gameOverDetail"></span>
         </div>
 
-        <!-- Draw offer notification -->
-        <div class="draw-offer" id="drawOfferBanner">
-          <strong>Draw offered!</strong>
-          <span>Your opponent is offering a draw.</span>
-          <div class="draw-buttons">
-            <button class="draw-btn" id="acceptDrawBtn" type="button">Accept</button>
-            <button class="draw-btn decline" id="declineDrawBtn" type="button">Decline</button>
-          </div>
-        </div>
-
-        <!-- Draw timer -->
-        <div class="draw-timer" id="drawTimer">Draw offer expires in <span id="drawTimerCount">5</span>s</div>
+        <!-- Draw offer now appears as a modal (#drawModal, near the other modals) instead of inline here -->
 
         <div class="panel-row">
           <div class="panel-label">Turn</div>
           <div class="turn-value" id="turnValue"><i class="fa-solid fa-chess-pawn" aria-hidden="true"></i>White to move</div>
         </div>
 
-        <div class="panel-row">
+        <div class="panel-row" id="gameLinkRow">
           <div class="panel-label">Game link</div>
           <div class="share-box">
             <span id="gameShareLink"></span>
@@ -578,6 +634,20 @@
     <div class="modal-buttons">
       <button class="modal-btn secondary" id="cancelCloseBtn" type="button">Cancel</button>
       <button class="modal-btn primary" id="confirmCloseBtn" type="button">Close Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- Draw Offer Modal (added) — replaces the old in-panel draw-offer box so the prompt always
+     shows centered on screen, for both the sender (waiting) and the recipient (Accept/Decline) -->
+<div class="modal-overlay" id="drawModal">
+  <div class="modal">
+    <h3 id="drawModalTitle">Draw offered!</h3>
+    <p id="drawModalText">Your opponent is offering a draw.</p>
+    <div class="draw-timer" id="drawTimer">Expires in <span id="drawTimerCount">5</span>s</div>
+    <div class="modal-buttons" id="drawModalButtons">
+      <button class="modal-btn secondary" id="declineDrawBtn" type="button">Decline</button>
+      <button class="modal-btn accept" id="acceptDrawBtn" type="button">Accept</button>
     </div>
   </div>
 </div>
@@ -625,9 +695,13 @@ const els = {
   opponentChip: document.getElementById('opponentChip'),
   youChip: document.getElementById('youChip'),
   gameShareLink: document.getElementById('gameShareLink'),
+  gameLinkRow: document.getElementById('gameLinkRow'), // added — lets us hide the link row for non-creators
   copyGameLinkBtn: document.getElementById('copyGameLinkBtn'),
   toastRegion: document.getElementById('toastRegion'),
-  drawOfferBanner: document.getElementById('drawOfferBanner'),
+  drawModal: document.getElementById('drawModal'), // added — modal replaces the old in-panel draw-offer box
+  drawModalTitle: document.getElementById('drawModalTitle'), // added
+  drawModalText: document.getElementById('drawModalText'), // added
+  drawModalButtons: document.getElementById('drawModalButtons'), // added
   acceptDrawBtn: document.getElementById('acceptDrawBtn'),
   declineDrawBtn: document.getElementById('declineDrawBtn'),
   drawTimer: document.getElementById('drawTimer'),
@@ -962,7 +1036,8 @@ function ejectToLobby(message, showToastMessage = true) {
     
     els.gameOverBanner.classList.remove('show');
     els.opponentBanner.classList.remove('show');
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
+    els.drawModalButtons.style.display = ''; // clear the sender's "buttons hidden" override so the next offer defaults back to showing Accept/Decline
     els.drawTimer.classList.remove('show');
     els.shareBox.style.display = 'none';
     els.waitingNote.style.display = 'none';
@@ -999,6 +1074,7 @@ function connectToGame(gameId, token, color, isCreator) {
   state.inGame = true;
   
   els.closeGameBtn.style.display = isCreator ? 'block' : 'none';
+  els.gameLinkRow.style.display = isCreator ? 'block' : 'none'; // added — only the creator gets the shareable link
   els.drawBtn.disabled = true;
   els.closeGameBtn.disabled = false;
 
@@ -1072,20 +1148,26 @@ function handleServerMessage(msg) {
 
   if (msg.type === 'draw_offered') {
     if (msg.offered_by !== state.myColor) {
-      els.drawOfferBanner.classList.add('show');
-      els.drawTimer.classList.add('show');
+      // You're the recipient — show the actionable modal with Accept/Decline
+      els.drawModalTitle.textContent = 'Draw offered!';
+      els.drawModalText.textContent = 'Your opponent is offering a draw.';
+      els.drawModalButtons.style.display = 'flex';
       state.drawOffered = true;
-      startDrawTimer();
     } else {
-      els.drawTimer.classList.add('show');
-      startDrawTimer();
+      // You sent the offer — show a waiting modal, no action buttons
+      els.drawModalTitle.textContent = 'Draw offer sent';
+      els.drawModalText.textContent = 'Waiting for your opponent to respond...';
+      els.drawModalButtons.style.display = 'none';
     }
+    els.drawModal.classList.add('show');
+    els.drawTimer.classList.add('show');
+    startDrawTimer();
     return;
   }
 
   if (msg.type === 'draw_accept') {
     state.gameActive = false;
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
     els.drawTimer.classList.remove('show');
     stopDrawTimer();
     els.gameOverBanner.classList.add('show');
@@ -1097,7 +1179,7 @@ function handleServerMessage(msg) {
   }
 
   if (msg.type === 'draw_declined') {
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
     els.drawTimer.classList.remove('show');
     stopDrawTimer();
     state.drawOffered = false;
@@ -1106,7 +1188,7 @@ function handleServerMessage(msg) {
   }
 
   if (msg.type === 'draw_expired') {
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
     els.drawTimer.classList.remove('show');
     stopDrawTimer();
     state.drawOffered = false;
@@ -1116,7 +1198,7 @@ function handleServerMessage(msg) {
 
   if (msg.type === 'game_draw') {
     state.gameActive = false;
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
     els.drawTimer.classList.remove('show');
     stopDrawTimer();
     els.gameOverBanner.classList.add('show');
@@ -1129,7 +1211,7 @@ function handleServerMessage(msg) {
 
   if (msg.type === 'game_closed') {
     state.gameActive = false;
-    els.drawOfferBanner.classList.remove('show');
+    els.drawModal.classList.remove('show');
     els.drawTimer.classList.remove('show');
     stopDrawTimer();
     
@@ -1212,6 +1294,10 @@ els.drawBtn.addEventListener('click', () => {
   if (!state.opponentJoined) return;
   state.drawOffered = true;
   state.ws.send(JSON.stringify({ type: 'draw_offer' }));
+  els.drawModalTitle.textContent = 'Draw offer sent'; // show the modal right away rather than waiting on the server echo
+  els.drawModalText.textContent = 'Waiting for your opponent to respond...';
+  els.drawModalButtons.style.display = 'none';
+  els.drawModal.classList.add('show');
   els.drawTimer.classList.add('show');
   startDrawTimer();
 });
@@ -1220,7 +1306,7 @@ els.drawBtn.addEventListener('click', () => {
 els.acceptDrawBtn.addEventListener('click', () => {
   if (!state.drawOffered) return;
   state.ws.send(JSON.stringify({ type: 'draw_accept' }));
-  els.drawOfferBanner.classList.remove('show');
+  els.drawModal.classList.remove('show');
   els.drawTimer.classList.remove('show');
   stopDrawTimer();
 });
@@ -1229,7 +1315,7 @@ els.acceptDrawBtn.addEventListener('click', () => {
 els.declineDrawBtn.addEventListener('click', () => {
   if (!state.drawOffered) return;
   state.ws.send(JSON.stringify({ type: 'draw_decline' }));
-  els.drawOfferBanner.classList.remove('show');
+  els.drawModal.classList.remove('show');
   els.drawTimer.classList.remove('show');
   stopDrawTimer();
   state.drawOffered = false;
