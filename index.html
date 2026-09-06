@@ -216,6 +216,24 @@
   .square i.piece-white{color:#FBF6EC;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.5));}
   .square i.piece-black{color:#221A0D;}
   .square.selected{box-shadow:inset 0 0 0 3px var(--brass);}
+
+  /* ---- Board coordinates (added) — rank numbers down the left edge, file letters along the bottom edge ---- */
+  .square .coord-rank, .square .coord-file{
+    position:absolute;
+    font-size:0.62rem;
+    font-weight:700;
+    font-family:'Inter',sans-serif;
+    pointer-events:none;
+    line-height:1;
+    z-index:1;
+  }
+  .square .coord-rank{ top:3px; left:4px; }
+  .square .coord-file{ bottom:3px; right:4px; }
+  .square.light .coord-rank, .square.light .coord-file{ color:var(--square-dark); }
+  .square.dark .coord-rank, .square.dark .coord-file{ color:var(--square-light); }
+  @media (max-width:640px){
+    .square .coord-rank, .square .coord-file{ font-size:0.55rem; } /* stay legible without crowding a smaller board */
+  }
   
   /* Only show target indicators when a piece is selected */
   .square.target::after{
@@ -294,6 +312,40 @@
 
   .modal-btn.accept{ background:var(--success); color:#132313; } /* added — positive color for the Accept action, distinct from the destructive-red .primary used by Close Game */
   .modal-btn.accept:hover{ background:#82AE82; }
+
+  /* ---- Game Over modal (added) — a full-screen celebration instead of the small in-panel banner ---- */
+  .game-over-modal{ text-align:center; max-width:420px; position:relative; overflow:hidden; }
+  .game-over-modal .game-over-icon{ font-size:3.4rem; margin-bottom:0.75rem; position:relative; z-index:1; }
+  .game-over-modal h3{ font-size:1.8rem; position:relative; z-index:1; }
+  .game-over-modal p{ position:relative; z-index:1; }
+  .game-over-modal .primary-btn{ margin-top:0.5rem; position:relative; z-index:1; }
+
+  .game-over-modal.win{
+    border:1px solid var(--brass);
+    box-shadow:0 0 0 1px rgba(201,162,75,0.25), 0 30px 80px rgba(201,162,75,0.25), 0 24px 48px rgba(0,0,0,0.5);
+  }
+  .game-over-modal.win::before{
+    content:''; position:absolute; inset:-40%;
+    background:radial-gradient(circle, rgba(201,162,75,0.25), transparent 60%);
+    animation:goldPulse 2.4s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes goldPulse{ 0%,100%{opacity:0.5;transform:scale(0.9);} 50%{opacity:1;transform:scale(1.05);} }
+  .game-over-modal.win .game-over-icon{ color:var(--brass-strong); filter:drop-shadow(0 0 18px rgba(224,187,99,0.6)); }
+  .game-over-modal.win h3{ color:var(--brass-strong); }
+
+  .game-over-modal.loss .game-over-icon{ color:var(--text-muted); }
+  .game-over-modal.draw .game-over-icon{ color:var(--success); }
+
+  .game-over-sparkles{ display:none; justify-content:center; gap:1rem; margin-bottom:0.5rem; position:relative; z-index:1; }
+  .game-over-modal.win .game-over-sparkles{ display:flex; }
+  .game-over-sparkles i{ color:var(--brass-strong); font-size:1.1rem; animation:sparkleBounce 1.6s ease-in-out infinite; }
+  .game-over-sparkles i:nth-child(2){ animation-delay:0.2s; font-size:1.4rem; }
+  .game-over-sparkles i:nth-child(3){ animation-delay:0.4s; }
+  @keyframes sparkleBounce{ 0%,100%{transform:translateY(0);opacity:0.6;} 50%{transform:translateY(-6px);opacity:1;} }
+  @media (prefers-reduced-motion: reduce){
+    .game-over-modal.win::before{ animation:none; }
+    .game-over-sparkles i{ animation:none; }
+  }
 
   /* ---- Action buttons ---- */
   .game-actions{
@@ -652,6 +704,18 @@
   </div>
 </div>
 
+<!-- Game Over Modal (added) — a full-screen celebration for checkmate/resignation/timeout,
+     replacing the small in-panel game-over banner. Draws still use the quick banner+auto-return flow. -->
+<div class="modal-overlay" id="gameOverModal">
+  <div class="modal game-over-modal" id="gameOverModalCard">
+    <div class="game-over-sparkles" aria-hidden="true"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+    <div class="game-over-icon" id="gameOverIcon"><i class="fa-solid fa-flag-checkered" aria-hidden="true"></i></div>
+    <h3 id="gameOverModalTitle">Game Over</h3>
+    <p id="gameOverModalDetail"></p>
+    <button class="primary-btn" id="gameOverContinueBtn" type="button">Continue</button>
+  </div>
+</div>
+
 <div class="toast-region" id="toastRegion" aria-live="polite"></div>
 
 <script>
@@ -702,6 +766,12 @@ const els = {
   drawModalTitle: document.getElementById('drawModalTitle'), // added
   drawModalText: document.getElementById('drawModalText'), // added
   drawModalButtons: document.getElementById('drawModalButtons'), // added
+  gameOverModal: document.getElementById('gameOverModal'), // added — full-screen win/loss celebration
+  gameOverModalCard: document.getElementById('gameOverModalCard'), // added
+  gameOverIcon: document.getElementById('gameOverIcon'), // added
+  gameOverModalTitle: document.getElementById('gameOverModalTitle'), // added
+  gameOverModalDetail: document.getElementById('gameOverModalDetail'), // added
+  gameOverContinueBtn: document.getElementById('gameOverContinueBtn'), // added
   acceptDrawBtn: document.getElementById('acceptDrawBtn'),
   declineDrawBtn: document.getElementById('declineDrawBtn'),
   drawTimer: document.getElementById('drawTimer'),
@@ -747,6 +817,76 @@ function setConnPill(mode, label) {
   const icon = mode === 'live' ? 'fa-circle-check' : mode === 'trouble' ? 'fa-triangle-exclamation' : 'fa-circle-notch fa-spinner';
   els.connPill.innerHTML = `<i class="fa-solid ${icon}" aria-hidden="true"></i>${label}`;
 }
+
+// ---- Game Over modal (added) ----
+function normalizeColor(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (s === '1-0') return 'white'; // PGN result code — added
+  if (s === '0-1') return 'black'; // PGN result code — added
+  const lower = s.toLowerCase();
+  if (lower.includes('white')) return 'white';
+  if (lower.includes('black')) return 'black';
+  return null;
+}
+
+function showGameOverModal(outcome, method, winnerRaw) {
+  // Prefer an explicit winner field from the server; fall back to scanning the outcome text only if that's absent
+  const winnerColor = normalizeColor(winnerRaw) || normalizeColor(outcome);
+  const isDraw = !winnerColor && (/draw|stalemate/i.test(outcome || '') || outcome === '1/2-1/2'); // PGN draw code — added
+
+  let resultClass, headline, personalNote;
+  if (isDraw) {
+    resultClass = 'draw';
+    headline = 'Draw!';
+    personalNote = 'The game ended in a draw.';
+  } else if (winnerColor) {
+    const iWon = state.myColor === winnerColor;
+    resultClass = iWon ? 'win' : 'loss';
+    headline = `${capitalize(winnerColor)} Wins!`; // states the winning color plainly, regardless of who's viewing
+    personalNote = iWon ? 'You won!' : 'You lost.';
+  } else {
+    resultClass = 'neutral';
+    headline = 'Game Over';
+    personalNote = '';
+  }
+
+  els.gameOverModalCard.classList.remove('win', 'loss', 'draw', 'neutral');
+  els.gameOverModalCard.classList.add(resultClass);
+
+  const icon = resultClass === 'win' ? 'fa-trophy'
+    : resultClass === 'loss' ? 'fa-chess-board'
+    : resultClass === 'draw' ? 'fa-handshake'
+    : 'fa-flag-checkered';
+  els.gameOverIcon.innerHTML = `<i class="fa-solid ${icon}" aria-hidden="true"></i>`;
+
+  els.gameOverModalTitle.textContent = headline;
+
+  const detailParts = [];
+  if (personalNote) detailParts.push(personalNote);
+  if (method) detailParts.push(`By ${method}`);
+  els.gameOverModalDetail.textContent = detailParts.join(' — ');
+
+  els.gameOverModal.classList.add('show');
+  els.drawBtn.disabled = true; // added — offering a draw makes no sense once the game has already ended
+}
+
+// Catches game-over info regardless of which message type it arrives on — some servers bundle the
+// finishing result into the winning move's own "move_made" broadcast rather than a separate event,
+// which is why only the player who delivered the final move was seeing the modal before.
+function maybeShowGameOverFromMsg(msg) {
+  if (msg.status === 'finished' || msg.winner) {
+    state.gameActive = false;
+    showGameOverModal(msg.outcome || msg.result, msg.method, msg.winner);
+    showToast('The game has ended', 'success', 'fa-flag-checkered');
+    return true;
+  }
+  return false;
+}
+
+els.gameOverContinueBtn.addEventListener('click', () => {
+  els.gameOverModal.classList.remove('show');
+});
 
 // ---- View switching -------------------------------------------------
 function showView(view) {
@@ -949,7 +1089,7 @@ els.closeGameModal.addEventListener('click', (e) => {
 });
 
 els.closeGameBtn.addEventListener('click', () => {
-  if (!state.isCreator || !state.gameActive) return;
+  if (!state.isCreator) return;
   showCloseGameModal();
 });
 
@@ -1035,6 +1175,7 @@ function ejectToLobby(message, showToastMessage = true) {
     showView(els.lobbyView);
     
     els.gameOverBanner.classList.remove('show');
+    els.gameOverModal.classList.remove('show'); // added — clear the win/loss celebration on the way back to the lobby
     els.opponentBanner.classList.remove('show');
     els.drawModal.classList.remove('show');
     els.drawModalButtons.style.display = ''; // clear the sender's "buttons hidden" override so the next offer defaults back to showing Accept/Decline
@@ -1111,6 +1252,7 @@ function connectToGame(gameId, token, color, isCreator) {
 }
 
 function handleServerMessage(msg) {
+  console.log('WS message:', msg); // temporary — remove once we've confirmed the game-over field names from your server
   // Handle new message types
   if (msg.type === 'game_state') {
     if (msg.board_state) renderBoard(msg.board_state);
@@ -1121,6 +1263,7 @@ function handleServerMessage(msg) {
     if (msg.status === 'ongoing') {
       handleOpponentJoined();
     }
+    maybeShowGameOverFromMsg(msg); // added — covers the case where this connect/reconnect lands on an already-finished game
     return;
   }
 
@@ -1133,15 +1276,14 @@ function handleServerMessage(msg) {
     if (!state.opponentJoined) {
       handleOpponentJoined();
     }
+    maybeShowGameOverFromMsg(msg); // added — the player who delivers the winning move can have the result bundled into this message instead of a separate game_over event
     return;
   }
 
   if (msg.type === 'game_over') {
     state.gameActive = false;
     if (msg.board_state) renderBoard(msg.board_state);
-    els.gameOverBanner.classList.add('show');
-    els.gameOverTitle.textContent = msg.outcome ? `Game over, ${msg.outcome}` : 'Game over';
-    els.gameOverDetail.textContent = msg.method ? `By ${msg.method}` : '';
+    showGameOverModal(msg.outcome, msg.method, msg.winner);
     showToast('The game has ended', 'success', 'fa-flag-checkered');
     return;
   }
@@ -1247,9 +1389,7 @@ function handleServerMessage(msg) {
     handleOpponentJoined();
   }
   if (msg.status === 'finished') {
-    els.gameOverBanner.classList.add('show');
-    els.gameOverTitle.textContent = msg.outcome ? `Game over, ${msg.outcome}` : 'Game over';
-    els.gameOverDetail.textContent = msg.method ? `By ${msg.method}` : '';
+    showGameOverModal(msg.outcome, msg.method, msg.winner);
     showToast('The game has ended', 'success', 'fa-flag-checkered');
   }
   if (msg.event === 'opponent_disconnected') {
@@ -1370,6 +1510,20 @@ function renderBoard(fen) {
         const icon = document.createElement('i');
         icon.className = `fa-solid ${PIECE_ICON[piece.type]} piece-${piece.color}`;
         div.appendChild(icon);
+      }
+
+      // Coordinate labels (added) — left column gets the rank number, bottom row gets the file letter
+      if (fIdx === 0) {
+        const rankLabel = document.createElement('span');
+        rankLabel.className = 'coord-rank';
+        rankLabel.textContent = rank;
+        div.appendChild(rankLabel);
+      }
+      if (rIdx === orderedRanks.length - 1) {
+        const fileLabel = document.createElement('span');
+        fileLabel.className = 'coord-file';
+        fileLabel.textContent = file;
+        div.appendChild(fileLabel);
       }
 
       if (state.selectedSquare === square) {
